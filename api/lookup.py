@@ -1,34 +1,32 @@
+from http.server import BaseHTTPRequestHandler
 import json
 import requests
-import psycopg2
-import os
+from urllib.parse import urlparse, parse_qs
 
-def handler(request):
-    query = request.args.get("query", "")
-    if not query:
-        return {"statusCode": 400, "body": "Missing query param"}
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        query_components = parse_qs(urlparse(self.path).query)
+        ioc = query_components.get("query", [None])[0]
 
-    # Lookup using ip-api
-    ip_resp = requests.get(f"http://ip-api.com/json/{query}")
-    data = ip_resp.json()
+        if not ioc:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"error": "Missing query parameter"}')
+            return
 
-    # Connect to Supabase
-    try:
-        conn = psycopg2.connect(os.environ["SUPABASE_DB_URL"])
-        cur = conn.cursor()
-        cur.execute("INSERT INTO ioc_logs (query, type, result) VALUES (%s, %s, %s)",
-                    (query, 'ip', json.dumps(data)))
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": f"DB error: {str(e)}"
-        }
+        try:
+            url = f"http://ip-api.com/json/{ioc}"
+            response = requests.get(url)
+            result = response.json()
 
-    return {
-        "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps(data)
-    }
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
