@@ -4,60 +4,17 @@
     {
       "src": "api/lookup.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "static/*",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
       "src": "/api/lookup",
       "dest": "/api/lookup.py",
-      "methods": ["GET"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-        "Content-Type": "application/json"
-      }
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "methods": ["GET"]
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/lookup", "destination": "/api/lookup.py" }
-  ],
-  "headers": [
-    {
-      "source": "/api/lookup",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        }
-      ]
     }
   ]
 }
