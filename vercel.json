@@ -1,8 +1,34 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/api/lookup", "destination": "/api/lookup.py" },
-    { "source": "/static/(.*)", "destination": "/static/$1" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/lookup.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "static/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/api/lookup",
+      "dest": "/api/lookup.py",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    }
   ]
-
 }
