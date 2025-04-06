@@ -460,6 +460,8 @@ footer {
       height: 250px;
   }
 }
+
+/* Add to your style.css */
 .loading {
   text-align: center;
   padding: 2rem;
@@ -489,6 +491,21 @@ footer {
   color: var(--danger);
 }
 
-.error-card i {
-  margin-right: 0.5rem;
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
 }
