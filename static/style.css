@@ -291,28 +291,3 @@ footer {
   padding: 1rem;
   background: #f8f9fa;
   color: #666;
-  font-size: 0.9rem;
-}
-
-.rate-limit {
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
-  color: #999;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .container {
-    margin: 0;
-    border-radius: 0;
-  }
-  
-  .tabs {
-    overflow-x: auto;
-    padding: 0;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-}

@@ -1,39 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Threat Intelligence Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Threat Intelligence Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1><i class="fas fa-shield-alt"></i> Threat Intelligence Dashboard</h1>
-        
-        <form id="lookupForm">
-            <div class="input-group">
-                <input type="text" id="queryInput" placeholder="Enter IP or domain" required>
-                <button type="submit"><i class="fas fa-search"></i> Lookup</button>
-            </div>
-        </form>
-        
-        <div id="result">
-            <div class="welcome">
-                <h2><i class="fas fa-info-circle"></i> Welcome</h2>
-                <p>Enter an IP address or domain to analyze its threat profile, geolocation, and registration details.</p>
-                <div class="examples">
-                    <p>Try these examples:</p>
-                    <ul>
-                        <li><span class="example">8.8.8.8</span> (Google DNS)</li>
-                        <li><span class="example">1.1.1.1</span> (Cloudflare DNS)</li>
-                        <li><span class="example">example.com</span></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-shield-alt"></i> Threat Intelligence Dashboard</h1>
+      <p class="subtitle">Analyze IPs, domains, and URLs for security threats</p>
+    </header>
+    
+    <form id="lookupForm">
+      <div class="input-group">
+        <input type="text" id="queryInput" placeholder="Enter IP, Domain or URL" required />
+        <button type="submit" id="lookupBtn">
+          <i class="fas fa-search"></i> Analyze
+        </button>
+      </div>
+      <div class="radio-group">
+        <label><input type="radio" name="queryType" value="auto" checked> Auto-detect</label>
+        <label><input type="radio" name="queryType" value="ip"> IP Only</label>
+        <label><input type="radio" name="queryType" value="domain"> Domain Only</label>
+      </div>
+    </form>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="threat">Threat Data</button>
+      <button class="tab-btn" data-tab="geo">GeoIP</button>
+      <button class="tab-btn" data-tab="whois">WHOIS</button>
     </div>
 
-    <script src="/static/script.js"></script>
+    <div id="result">
+      <div class="tab-content active" id="overview-tab">
+        <div class="welcome-message">
+          <h2><i class="fas fa-info-circle"></i> Welcome to Threat Intelligence Dashboard</h2>
+          <p>Enter an IP address (e.g., 8.8.8.8), domain (e.g., google.com), or URL to analyze it for security threats, geolocation, and WHOIS information.</p>
+          <div class="examples">
+            <h3>Try these examples:</h3>
+            <ul>
+              <li><span class="example" data-query="8.8.8.8">Google DNS (8.8.8.8)</span></li>
+              <li><span class="example" data-query="facebook.com">facebook.com</span></li>
+              <li><span class="example" data-query="1.1.1.1">Cloudflare DNS (1.1.1.1)</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="tab-content" id="threat-tab"></div>
+      <div class="tab-content" id="geo-tab"></div>
+      <div class="tab-content" id="whois-tab"></div>
+    </div>
+
+    <footer>
+      <p>Data sources: IP-API.com, AbuseIPDB, VirusTotal (community)</p>
+      <p class="rate-limit">Rate limited - please use responsibly</p>
+    </footer>
+  </div>
+
+  <script src="/static/script.js"></script>
 </body>
 </html>
