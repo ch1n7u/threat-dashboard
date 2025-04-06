@@ -3,10 +3,10 @@ import json
 import requests
 from urllib.parse import urlparse, parse_qs
 import sys
+from datetime import datetime
 
 class handler(BaseHTTPRequestHandler):
     def _send_response(self, data, status=200):
-        """Send JSON response with proper headers"""
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -15,58 +15,59 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            # Parse query parameter
-            query = parse_qs(urlparse(self.path).query).get('query', [None])[0]
-            
+            query = parse_qs(urlparse(self.path).query.get('query', [None])[0]
             if not query:
-                return self._send_response(
-                    {"status": "error", "message": "Missing query parameter"},
-                    status=400
-                )
+                return self._send_response({"error": "Missing query parameter"}, 400)
 
-            # Call IP-API (free tier)
-            response = requests.get(
-                f"http://ip-api.com/json/{query}",
+            # Get all data
+            result = {
+                "overview": self.get_ip_geolocation(query),
+                "geoip": self.get_ip_geolocation(query),
+                "threat": self.get_threat_data(query),
+                "whois": self.get_whois_data(query),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            self._send_response(result)
+
+        except Exception as e:
+            self._send_response({"error": str(e)}, 500)
+
+    def get_ip_geolocation(self, query):
+        try:
+            res = requests.get(f"http://ip-api.com/json/{query}", timeout=5)
+            return res.json()
+        except:
+            return {"error": "Could not fetch geolocation data"}
+
+    def get_threat_data(self, query):
+        try:
+            # AbuseIPDB public API (no key needed for basic checks)
+            res = requests.get(
+                f"https://api.abuseipdb.com/api/v2/check",
+                params={'ipAddress': query, 'maxAgeInDays': '90'},
+                headers={'Accept': 'application/json'},
                 timeout=5
             )
+            if res.status_code == 200:
+                return res.json().get('data', {})
+            return {"error": "Limited threat data available"}
+        except:
+            return {"error": "Could not fetch threat data"}
 
-            # Handle IP-API response
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('status') == 'fail':
-                    return self._send_response(
-                        {"status": "error", "message": data.get('message', 'IP lookup failed')},
-                        status=404
-                    )
-                return self._send_response({
-                    "status": "success",
-                    "data": data
-                })
-            else:
-                return self._send_response(
-                    {"status": "error", "message": "IP lookup service unavailable"},
-                    status=502
-                )
-
-        except requests.exceptions.Timeout:
-            return self._send_response(
-                {"status": "error", "message": "Request timeout"},
-                status=504
+    def get_whois_data(self, query):
+        try:
+            # Free WHOIS API (no key needed)
+            res = requests.get(
+                f"https://www.whoisxmlapi.com/whoisserver/WhoisService",
+                params={
+                    'domainName': query,
+                    'outputFormat': 'JSON',
+                    'da': '1'  # Try to get most recent data
+                },
+                timeout=5
             )
-        except requests.exceptions.RequestException as e:
-            return self._send_response(
-                {"status": "error", "message": f"Network error: {str(e)}"},
-                status=503
-            )
-        except Exception as e:
-            return self._send_response(
-                {"status": "error", "message": f"Internal server error: {str(e)}"},
-                status=500
-            )
-
-# For local testing
-if __name__ == '__main__':
-    from http.server import HTTPServer
-    server = HTTPServer(('localhost', 8000), handler)
-    print("Server running at http://localhost:8000")
-    server.serve_forever()
+            if res.status_code == 200:
+                return res.json()
+            return {"error": "Limited WHOIS data available"}
+        except:
+            return {"error": "Could not fetch WHOIS data"}
