@@ -5,6 +5,11 @@ from urllib.parse import urlparse, parse_qs
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # Set CORS headers
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        
         query_components = parse_qs(urlparse(self.path).query)
         ioc = query_components.get("query", [None])[0]
 
@@ -12,7 +17,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(b'{"error": "Missing query parameter"}')
+            self.wfile.write(json.dumps({"error": "Missing query parameter"}).encode())
             return
 
         try:
