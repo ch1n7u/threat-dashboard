@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Threat Intelligence Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-gray-100 text-gray-900 p-6">
-  <div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">🕵️‍♂️ Threat Intelligence Dashboard</h1>
-    <form id="iocForm" class="flex gap-2 mb-4">
-      <input id="query" type="text" placeholder="Enter IP/Domain" class="flex-1 p-2 rounded border" />
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Lookup</button>
-    </form>
-    <pre id="result" class="bg-white p-4 rounded shadow text-sm"></pre>
-  </div>
+<body>
+  <h1>🔍 Threat Intelligence Dashboard</h1>
+
+  <input type="text" id="iocInput" placeholder="Enter IP, Domain, or URL" />
+  <button onclick="lookupIOC()">Lookup</button>
+
+  <pre id="result">Awaiting input...</pre>
+
   <script src="static/script.js"></script>
 </body>
 </html>
