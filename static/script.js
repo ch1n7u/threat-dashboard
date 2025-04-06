@@ -1,298 +1,137 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // DOM Elements
-  const form = document.getElementById('lookupForm');
-  const queryInput = document.getElementById('queryInput');
-  const lookupBtn = document.getElementById('lookupBtn');
-  const exampleLinks = document.querySelectorAll('.example');
-  
-  // Tab management
-  function setupTabs() {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-              const tabId = btn.getAttribute('data-tab');
-              document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-              document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-              
-              btn.classList.add('active');
-              document.getElementById(`${tabId}-tab`).classList.add('active');
-          });
-      });
-  }
-  
-  // Example click handlers
-  exampleLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-          e.preventDefault();
-          queryInput.value = link.getAttribute('data-query');
-          form.dispatchEvent(new Event('submit'));
-      });
-  });
-  
-  // Form submission
-  form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const query = queryInput.value.trim();
-      
-      if (!query) {
-          showError('Please enter an IP or domain');
-          return;
-      }
-      
-      showLoading(true);
-      
-      try {
-          const response = await fetch(`/api/lookup?query=${encodeURIComponent(query)}`);
-          const data = await response.json();
-          
-          if (data.error) {
-              throw new Error(data.error);
-          }
-          
-          displayResults(data);
-      } catch (error) {
-          showError(error.message);
-          console.error('Error:', error);
-      } finally {
-          showLoading(false);
-      }
-  });
-  
-  // Display functions
-  function displayResults(data) {
-      displayOverview(data.overview);
-      displayThreatData(data.threat);
-      displayGeoData(data.geoip);
-      displayWhoisData(data.whois);
-  }
-  
-  function displayOverview(data) {
-      const tab = document.getElementById('overview-tab');
-      if (data.error) {
-          tab.innerHTML = `<div class="error-card">${data.error}</div>`;
-          return;
-      }
-      
-      const threatScore = data.abuseConfidenceScore || 0;
-      const threatLevel = getThreatLevel(threatScore);
-      
-      tab.innerHTML = `
-          <div class="card">
-              <h3><i class="fas fa-info-circle"></i> Overview</h3>
-              <div class="info-grid">
-                  <div class="info-item">
-                      <strong>Target</strong>
-                      <span>${data.query || 'N/A'}</span>
-                  </div>
-                  <div class="info-item">
-                      <strong>Location</strong>
-                      <span>${data.city || 'Unknown'}, ${data.country || ''}</span>
-                  </div>
-                  <div class="info-item">
-                      <strong>ISP</strong>
-                      <span>${data.isp || 'Unknown'}</span>
-                  </div>
-                  <div class="info-item">
-                      <strong>Threat Score</strong>
-                      <div class="threat-meter">
-                          <div class="threat-bar" style="width: ${threatScore}%; background: ${threatLevel.color}"></div>
-                          <span>${threatScore}/100</span>
-                      </div>
-                      <span class="threat-level ${threatLevel.class}">${threatLevel.text}</span>
-                  </div>
-              </div>
-              
-              ${data.lat && data.lon ? `
-              <h3><i class="fas fa-map-marked-alt"></i> Location Map</h3>
-              <div class="map-container">
-                  <iframe 
-                      width="100%" 
-                      height="100%" 
-                      frameborder="0" 
-                      src="https://maps.google.com/maps?q=${data.lat},${data.lon}&z=8&output=embed">
-                  </iframe>
-              </div>
-              ` : ''}
-          </div>
-      `;
-  }
-  
-  function displayThreatData(data) {
-      const tab = document.getElementById('threat-tab');
-      if (data.error) {
-          tab.innerHTML = `<div class="error-card">${data.error}</div>`;
-          return;
-      }
-      
-      tab.innerHTML = `
-          <div class="card">
-              <h3><i class="fas fa-shield-virus"></i> Threat Intelligence</h3>
-              
-              <div class="threat-stats">
-                  <div class="stat-card danger">
-                      <h4>Abuse Score</h4>
-                      <div class="stat-value">${data.abuseConfidenceScore || 0}/100</div>
-                  </div>
-                  <div class="stat-card warning">
-                      <h4>Total Reports</h4>
-                      <div class="stat-value">${data.totalReports || 0}</div>
-                  </div>
-                  <div class="stat-card info">
-                      <h4>Last Reported</h4>
-                      <div class="stat-value">${formatDate(data.lastReportedAt) || 'Never'}</div>
-                  </div>
-              </div>
-              
-              ${data.reports && data.reports.length > 0 ? `
-              <h3><i class="fas fa-clipboard-list"></i> Recent Reports</h3>
-              <div class="reports-list">
-                  ${data.reports.slice(0, 5).map(report => `
-                      <div class="report-item">
-                          <div class="report-date">${formatDate(report.reportedAt)}</div>
-                          <div class="report-categories">
-                              ${report.categories.map(cat => `<span class="category-tag">${cat}</span>`).join('')}
-                          </div>
-                      </div>
-                  `).join('')}
-              </div>
-              ` : ''}
-          </div>
-      `;
-  }
-  
-  function displayGeoData(data) {
-      const tab = document.getElementById('geo-tab');
-      if (data.error) {
-          tab.innerHTML = `<div class="error-card">${data.error}</div>`;
-          return;
-      }
-      
-      tab.innerHTML = `
-          <div class="card">
-              <h3><i class="fas fa-globe-americas"></i> Geolocation Data</h3>
-              
-              <div class="geo-grid">
-                  <div class="geo-map">
-                      ${data.lat && data.lon ? `
-                      <div class="map-container">
-                          <iframe 
-                              width="100%" 
-                              height="100%" 
-                              frameborder="0" 
-                              src="https://maps.google.com/maps?q=${data.lat},${data.lon}&z=8&output=embed">
-                          </iframe>
-                      </div>
-                      ` : '<p>No map data available</p>'}
-                  </div>
-                  
-                  <div class="geo-details">
-                      <div class="detail-item">
-                          <strong>Country</strong>
-                          <span>${data.country || 'Unknown'} (${data.countryCode || ''})</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>Region</strong>
-                          <span>${data.regionName || 'Unknown'} (${data.region || ''})</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>City</strong>
-                          <span>${data.city || 'Unknown'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>ZIP Code</strong>
-                          <span>${data.zip || 'N/A'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>Coordinates</strong>
-                          <span>${data.lat || 'N/A'}, ${data.lon || 'N/A'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>Timezone</strong>
-                          <span>${data.timezone || 'N/A'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>ISP</strong>
-                          <span>${data.isp || 'Unknown'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>Organization</strong>
-                          <span>${data.org || 'N/A'}</span>
-                      </div>
-                      <div class="detail-item">
-                          <strong>AS Number</strong>
-                          <span>${data.as || 'N/A'}</span>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      `;
-  }
-  
-  function displayWhoisData(data) {
-      const tab = document.getElementById('whois-tab');
-      if (data.error) {
-          tab.innerHTML = `<div class="error-card">${data.error}</div>`;
-          return;
-      }
-      
-      // Format WHOIS data for display
-      let whoisContent = '';
-      if (typeof data === 'object') {
-          whoisContent = Object.entries(data)
-              .map(([key, value]) => {
-                  if (Array.isArray(value)) {
-                      return `<strong>${key}:</strong> ${value.join(', ')}`;
-                  }
-                  return `<strong>${key}:</strong> ${value}`;
-              })
-              .join('<br>');
-      } else {
-          whoisContent = data;
-      }
-      
-      tab.innerHTML = `
-          <div class="card">
-              <h3><i class="fas fa-address-card"></i> WHOIS Data</h3>
-              <div class="whois-container">
-                  ${whoisContent}
-              </div>
-          </div>
-      `;
-  }
-  
-  // Helper functions
-  function showLoading(show) {
-      if (show) {
-          lookupBtn.disabled = true;
-          lookupBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
-      } else {
-          lookupBtn.disabled = false;
-          lookupBtn.innerHTML = '<i class="fas fa-search"></i> Analyze';
-      }
-  }
-  
-  function showError(message) {
-      document.getElementById('overview-tab').innerHTML = `
-          <div class="error-card">
-              <i class="fas fa-exclamation-triangle"></i>
-              <h3>Error</h3>
-              <p>${message}</p>
-          </div>
-      `;
-      document.querySelector('.tab-btn[data-tab="overview"]').click();
-  }
-  
-  function formatDate(dateString) {
-      if (!dateString) return null;
-      const options = { year: 'numeric', month: 'short', day: 'numeric' };
-      return new Date(dateString).toLocaleDateString(undefined, options);
-  }
-  
-  function getThreatLevel(score) {
-      if (score >= 70) return { text: 'High', class: 'threat-high', color: '#dc3545' };
-      if (score >= 30) return { text: 'Medium', class: 'threat-medium', color: '#ffc107' };
-      return { text: 'Low', class: 'threat-low', color: '#28a745' };
-  }
-  
-  // Initialize
-  setupTabs();
-});
+from http.server import BaseHTTPRequestHandler
+import json
+import requests
+from urllib.parse import urlparse, parse_qs
+import sys
+import re
+
+class handler(BaseHTTPRequestHandler):
+    def _set_headers(self, content_type='application/json', status_code=200):
+        self.send_response(status_code)
+        self.send_header('Content-type', content_type)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+
+    def do_GET(self):
+        try:
+            query = parse_qs(urlparse(self.path).query.get('query', [None])[0]
+            
+            if not query:
+                return self._send_error("Missing query parameter", 400)
+            
+            # Validate input
+            if not self._is_valid_query(query):
+                return self._send_error("Invalid query format", 400)
+
+            # Get all data
+            result = {
+                "status": "success",
+                "data": {
+                    "geoip": self._get_geoip_data(query),
+                    "threat": self._get_threat_data(query),
+                    "whois": self._get_whois_data(query)
+                }
+            }
+            
+            self._set_headers()
+            self.wfile.write(json.dumps(result).encode())
+            
+        except Exception as e:
+            self._send_error(f"Internal server error: {str(e)}", 500)
+
+    def _is_valid_query(self, query):
+        """Validate if query is IP or domain"""
+        ip_pattern = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
+        domain_pattern = r'^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
+        return re.match(ip_pattern, query) or re.match(domain_pattern, query)
+
+    def _get_geoip_data(self, query):
+        """Get geolocation data from IP-API"""
+        try:
+            response = requests.get(f"http://ip-api.com/json/{query}", timeout=5)
+            if response.status_code == 200:
+                return response.json()
+            return {"error": "Geolocation service unavailable"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _get_threat_data(self, query):
+        """Get threat data from AbuseIPDB"""
+        try:
+            if not self._is_valid_ip(query):
+                return {"error": "Threat data only available for IP addresses"}
+                
+            response = requests.get(
+                "https://api.abuseipdb.com/api/v2/check",
+                params={
+                    'ipAddress': query,
+                    'maxAgeInDays': '90',
+                    'verbose': ''
+                },
+                headers={'Accept': 'application/json'},
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                return response.json().get('data', {})
+            return {"error": "Threat data service unavailable"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _get_whois_data(self, query):
+        """Get WHOIS data from appropriate source"""
+        try:
+            if self._is_valid_ip(query):
+                # Use RIPE for IP addresses
+                response = requests.get(
+                    f"https://stat.ripe.net/data/whois/data.json?resource={query}",
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    return self._parse_ripe_whois(response.json())
+            else:
+                # Use JSONWHOIS for domains
+                response = requests.get(
+                    "https://jsonwhois.com/api/v1/whois",
+                    params={'domain': query},
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    return response.json()
+            
+            return {"error": "WHOIS service unavailable"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _parse_ripe_whois(self, data):
+        """Parse RIPE WHOIS data into simpler format"""
+        records = {}
+        for record in data.get('data', {}).get('records', []):
+            for attr in record.get('attributes', []):
+                key = attr.get('key', '').lower()
+                value = attr.get('value', '')
+                if key and value:
+                    if key not in records:
+                        records[key] = []
+                    records[key].append(value)
+        return records
+
+    def _is_valid_ip(self, query):
+        """Check if query is an IP address"""
+        ip_pattern = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
+        return re.match(ip_pattern, query) is not None
+
+    def _send_error(self, message, status_code=400):
+        """Send error response in JSON format"""
+        self._set_headers(status_code=status_code)
+        error_response = {
+            "status": "error",
+            "message": message
+        }
+        self.wfile.write(json.dumps(error_response).encode())
+
+if __name__ == '__main__':
+    from http.server import HTTPServer
+    server = HTTPServer(('localhost', 8000), handler)
+    print("Server running at http://localhost:8000")
+    server.serve_forever()
