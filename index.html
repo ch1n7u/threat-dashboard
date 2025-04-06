@@ -7,13 +7,15 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🔍 Threat Intelligence Dashboard</h1>
+  <div class="container">
+    <h1>Threat Intelligence Dashboard</h1>
+    <form id="lookupForm">
+      <input type="text" id="queryInput" placeholder="Enter IP or Domain" required />
+      <button type="submit">Lookup</button>
+    </form>
+    <div id="result"></div>
+  </div>
 
-  <input type="text" id="iocInput" placeholder="Enter IP, Domain, or URL" />
-  <button onclick="lookupIOC()">Lookup</button>
-
-  <pre id="result">Awaiting input...</pre>
-
-  <script src="static/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
