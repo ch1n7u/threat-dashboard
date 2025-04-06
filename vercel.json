@@ -1,7 +1,6 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "api/lookup.py", "use": "@vercel/python" }
-    ]
-  }
-  
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/lookup.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
