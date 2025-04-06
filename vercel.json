@@ -4,4 +4,5 @@
     { "source": "/api/lookup", "destination": "/api/lookup.py" },
     { "source": "/static/(.*)", "destination": "/static/$1" }
   ]
+
 }
