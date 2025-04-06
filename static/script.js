@@ -1,3 +1,4 @@
+console.log("Script loaded!");
 document.getElementById("iocForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const query = document.getElementById("query").value;
